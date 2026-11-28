@@ -949,15 +949,15 @@ def test_reject_material_helper_name_collision(name):
         client.build("pod-1", _base_spec(main_container=_main(name=name)))
 
 
-def test_sync_sidecar_disabled_by_env_keeps_init_and_materials(monkeypatch):
-    """一次性材料部署可关停常驻 sync sidecar：init 与材料卷不受影响。"""
+def test_sync_sidecar_not_injected_by_default(monkeypatch):
+    """默认不注入常驻材料同步 sidecar（一次性材料部署只保留 init 容器）。"""
     link = LinkMTLSConfig(
         mode=LinkMTLSMode.ENFORCE,
         identity=MTLSDeploymentIdentity("deployment", "binding", 1),
         agentserver_secret="agentserver-link-tls",
     )
     client = _TestPodClient(link_mtls_config=link)
-    monkeypatch.setenv("AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR", "off")
+    monkeypatch.delenv("AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR", raising=False)
     pod = client.build(
         "pod-1",
         _base_spec(
@@ -978,14 +978,14 @@ def test_sync_sidecar_disabled_by_env_keeps_init_and_materials(monkeypatch):
     assert env["JIUWENSWARM_LINK_MTLS_MODE"] == "enforce"
 
 
-def test_sync_sidecar_enabled_by_default(monkeypatch):
+def test_sync_sidecar_injected_when_env_on(monkeypatch):
     link = LinkMTLSConfig(
         mode=LinkMTLSMode.ENFORCE,
         identity=MTLSDeploymentIdentity("deployment", "binding", 1),
         agentserver_secret="agentserver-link-tls",
     )
     client = _TestPodClient(link_mtls_config=link)
-    monkeypatch.delenv("AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR", raising=False)
+    monkeypatch.setenv("AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR", "on")
     pod = client.build(
         "pod-1",
         _base_spec(

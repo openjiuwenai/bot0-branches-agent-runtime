@@ -661,11 +661,13 @@ class RealK8sPodClient(K8sPodClient):
             # The sync sidecar only matters when link Secrets may rotate: the
             # AgentServer process loads identity once at startup (no hot reload),
             # and rotation is fully covered by pod recreation (the init container
-            # re-copies from the Secret). Once-only deployments can disable the
-            # idle sidecar via env to save per-pod resources.
+            # re-copies from the Secret). Default: no sidecar (once-only
+            # deployments keep a single init container); set
+            # AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR=on to keep the file-freshness
+            # watcher.
             if os.getenv(
-                "AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR", "on"
-            ).strip().lower() not in {"off", "false", "0", "no"}:
+                "AGENT_RUNTIME_LINK_MTLS_SYNC_SIDECAR", "off"
+            ).strip().lower() in {"on", "true", "1", "yes"}:
                 helpers.append(client.V1Container(name="link-material-sync", **helper))
             helper = {**helper, "command": [*helper.get("command", []), "--once"]}
             initializers.append(client.V1Container(name="link-material-init", **helper))
